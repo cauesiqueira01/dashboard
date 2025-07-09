@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: dashboard-atendimento
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:server
-    plan: free
-
