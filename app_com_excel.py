@@ -24,29 +24,17 @@ def ler_dados_excel(caminho_arquivo):
         df_entrantes = pd.read_excel(
             caminho_arquivo, 
             sheet_name='base de entrantes',
-            usecols=['Data/hora abertura', 'AV'],  # Coluna AV = Empresa
-            names=['Data/hora abertura', 'Empresa']
+            usecols=["Data/hora abertura", "EMPRESA"],
+            names=["Data/hora abertura", "Empresa"]
         )
         
         # Ler guia de fechamento
         df_fechados = pd.read_excel(
             caminho_arquivo, 
-            sheet_name='BASE DE FECHAMENTO',
-            usecols=['Data/hora encerramento', 'AX', 'BA', 'BC'],  # AX=Empresa, BA=TIT, BC=Reabertos
-            names=['Data/hora encerramento', 'Empresa', 'TIT', 'Reabertos']
-        )
-        
-        # Ler SLA da guia BASE DE FECHAMENTO
-        df_sla = pd.read_excel(
-            caminho_arquivo, 
-            sheet_name='BASE DE FECHAMENTO',
-            usecols=['BA'],  # Coluna BA para SLA 2
-            names=['SLA_2']
-        )
-        
-        # Adicionar SLA ao dataframe de fechados
-        df_fechados['SLA_2'] = df_sla['SLA_2']
-        
+            sheet_name=\'BASE DE FECHAMENTO\
+            usecols=["Data/hora encerramento", "EMPRESA", "TIT", "SLA2", "REABERTURA"],
+            names=["Data/hora encerramento", "Empresa", "TIT", "SLA_2", "Reabertos"]
+        )]       
         # Converter datas
         df_entrantes['Data/hora abertura'] = pd.to_datetime(df_entrantes['Data/hora abertura'])
         df_fechados['Data/hora encerramento'] = pd.to_datetime(df_fechados['Data/hora encerramento'])
@@ -90,7 +78,7 @@ def gerar_dados_simulados():
         dados_entrantes.append({
             'Data/hora abertura': data_abertura,
             'Empresa': np.random.choice(empresas),
-            'ID_Chamado': f'CH{i+1:04d}'
+            'ID_Chamad            Empresa
         })
     
     df_entrantes = pd.DataFrame(dados_entrantes)
@@ -101,25 +89,22 @@ def gerar_dados_simulados():
     
     for i in range(num_fechados):
         # Usar dados dos entrantes como base
-        data_abertura = dados_entrantes[i]['Data/hora abertura']
+        data_abertura = dados_entrantes[i]["Data/hora abertura"]
         data_encerramento = data_abertura + timedelta(
             days=np.random.randint(1, 15),
             hours=np.random.randint(1, 8)
         )
         
         dados_fechados.append({
-            'ID_Chamado': dados_entrantes[i]['ID_Chamado'],
-            'Data/hora encerramento': data_encerramento,
-            'Empresa': dados_entrantes[i]['Empresa'],
-            'TIT': np.random.choice(status_tit),
-            'SLA_2': np.random.choice(status_sla),
-            'Reabertos': np.random.choice(status_reabertos)
+            "ID_Chamado": dados_entrantes[i]["ID_Chamado"],
+            "Data/hora encerramento": data_encerramento,
+            "Empresa": dados_entrantes[i]["Empresa"],
+            "Reabertos": np.random.choice(status_reabertos)
         })
     
     df_fechados = pd.DataFrame(dados_fechados)
     
     return df_entrantes, df_fechados
-
 # Tentar ler dados do Excel, senão usar simulados
 CAMINHO_EXCEL = 'dados_atendimento.xlsx'  # Nome do arquivo Excel
 if os.path.exists(CAMINHO_EXCEL):
@@ -137,17 +122,13 @@ def calcular_kpis(df_entrantes, df_fechados):
     total_entrantes = len(df_entrantes)
     total_fechados = len(df_fechados)
     
-    # Percentuais de TIT, SLA e Reaberturas dentro do prazo
-    tit_dentro_prazo = len(df_fechados[df_fechados['TIT'] == 'DENTRO']) / len(df_fechados) * 100 if len(df_fechados) > 0 else 0
-    sla_dentro_prazo = len(df_fechados[df_fechados['SLA_2'] == 'DENTRO']) / len(df_fechados) * 100 if len(df_fechados) > 0 else 0
-    reaberturas = len(df_fechados[df_fechados['Reabertos'] == 'SIM']) / len(df_fechados) * 100 if len(df_fechados) > 0 else 0
+    # Percentuais de Reaberturas
+    reaberturas = len(df_fechados[df_fechados["Reabertos"] == "SIM"]) / len(df_fechados) * 100 if len(df_fechados) > 0 else 0
     
     return {
-        'total_entrantes': total_entrantes,
-        'total_fechados': total_fechados,
-        'tit_dentro_prazo': tit_dentro_prazo,
-        'sla_dentro_prazo': sla_dentro_prazo,
-        'reaberturas': reaberturas
+        "total_entrantes": total_entrantes,
+        "total_fechados": total_fechados,
+        "reaberturas": reaberturas
     }
 
 # Calcular KPIs
@@ -254,49 +235,21 @@ app.layout = html.Div([
                 style={'color': '#34495e', 'marginBottom': '20px'}),
         
         # Filtros
-        html.Div([
-            html.Div([
-                html.Label("Filtrar por Empresa:"),
-                dcc.Dropdown(
-                    id='filtro-empresa',
-                    options=[{'label': 'Todas', 'value': 'Todas'}] + 
-                            [{'label': emp, 'value': emp} for emp in df_entrantes['Empresa'].unique()],
-                    value='Todas'
-                )
-            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '5%'}),
-            
-            html.Div([
-                html.Label("Filtrar por Status TIT:"),
-                dcc.Dropdown(
-                    id='filtro-tit',
-                    options=[{'label': 'Todos', 'value': 'Todos'}] + 
-                            [{'label': status, 'value': status} for status in df_fechados['TIT'].unique()],
-                    value='Todos'
-                )
-            ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '5%'}),
-            
-            html.Div([
+        html.Div([[
                 html.Label("Filtrar por Status SLA:"),
                 dcc.Dropdown(
-                    id='filtro-sla',
-                    options=[{'label': 'Todos', 'value': 'Todos'}] + 
-                            [{'label': status, 'value': status} for status in df_fechados['SLA_2'].unique()],
-                    value='Todos'
+                    id=\'filtro-sla\
                 )
-            ], style={'width': '30%', 'display': 'inline-block'})
-        ], style={'marginBottom': '20px'}),
+            ], style={\'width\': \'30%\', \'display\': \'inline-block\'}),
         
         # Tabela de Detalhes
         html.Div([
             dash_table.DataTable(
-                id='tabela-detalhes',
+                id=\'tabela-detalhes\
                 columns=[
-                    {'name': 'ID Chamado', 'id': 'ID_Chamado'},
-                    {'name': 'Empresa', 'id': 'Empresa'},
+                    {\'name\': \'ID Chamado\', \'id\': \'ID_Chamado\'},        {'name': 'Empresa', 'id': 'Empresa'},
                     {'name': 'Data Abertura', 'id': 'Data_Abertura'},
                     {'name': 'Data Encerramento', 'id': 'Data_Encerramento'},
-                    {'name': 'TIT', 'id': 'TIT'},
-                    {'name': 'SLA', 'id': 'SLA_2'},
                     {'name': 'Reaberto', 'id': 'Reabertos'}
                 ],
                 data=[],
@@ -335,22 +288,19 @@ def atualizar_grafico_empresa(empresa_selecionada):
 
 @app.callback(
     Output('grafico-status-tit-sla', 'figure'),
-    Input('filtro-tit', 'value')
+    Input('filtro-empresa', 'value') # Mudança aqui para usar filtro-empresa
 )
-def atualizar_grafico_status(tit_selecionado):
-    # Contar status TIT e SLA
-    tit_counts = df_fechados['TIT'].value_counts()
-    sla_counts = df_fechados['SLA_2'].value_counts()
+def atualizar_grafico_status(empresa_selecionada):
+    # Contar status Reabertos
+    reabertos_counts = df_fechados['Reabertos'].value_counts()
     
     fig = go.Figure()
-    fig.add_trace(go.Bar(name='TIT', x=tit_counts.index, y=tit_counts.values))
-    fig.add_trace(go.Bar(name='SLA', x=sla_counts.index, y=sla_counts.values))
+    fig.add_trace(go.Bar(name='Reabertos', x=reabertos_counts.index, y=reabertos_counts.values))
     
     fig.update_layout(
-        title='Status TIT e SLA',
+        title='Status de Reaberturas',
         xaxis_title='Status',
-        yaxis_title='Número de Chamados',
-        barmode='group'
+        yaxis_title='Número de Chamados'
     )
     
     return fig
@@ -395,18 +345,15 @@ def atualizar_tendencia_chamados(empresa_selecionada):
 @app.callback(
     Output('tabela-detalhes', 'data'),
     [Input('filtro-empresa', 'value'),
-     Input('filtro-tit', 'value'),
-     Input('filtro-sla', 'value')]
+     Input('filtro-sla', 'value')] # Removido filtro-tit
 )
-def atualizar_tabela_detalhes(empresa, tit, sla):
+def atualizar_tabela_detalhes(empresa, sla):
     # Combinar dados de entrantes e fechados
     df_combinado = pd.merge(df_entrantes, df_fechados, on=['ID_Chamado', 'Empresa'], how='left')
     
     # Aplicar filtros
     if empresa != 'Todas':
         df_combinado = df_combinado[df_combinado['Empresa'] == empresa]
-    if tit != 'Todos' and not df_combinado.empty:
-        df_combinado = df_combinado[df_combinado['TIT'] == tit]
     if sla != 'Todos' and not df_combinado.empty:
         df_combinado = df_combinado[df_combinado['SLA_2'] == sla]
     
@@ -422,7 +369,7 @@ def atualizar_tabela_detalhes(empresa, tit, sla):
     df_tabela = df_tabela.fillna('N/A')
     
     # Selecionar apenas as colunas necessárias
-    colunas_tabela = ['ID_Chamado', 'Empresa', 'Data_Abertura', 'Data_Encerramento', 'TIT', 'SLA_2', 'Reabertos']
+    colunas_tabela = ['ID_Chamado', 'Empresa', 'Data_Abertura', 'Data_Encerramento', 'Reabertos'] # Removido TIT e SLA_2
     df_tabela = df_tabela[colunas_tabela]
     
     return df_tabela.to_dict('records')
@@ -430,4 +377,3 @@ def atualizar_tabela_detalhes(empresa, tit, sla):
 if __name__ == '__main__':
     # Para desenvolvimento local
     app.run(debug=True, host='0.0.0.0', port=8052)
-
